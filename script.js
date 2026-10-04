@@ -25,6 +25,10 @@ let heroField = hero.querySelector(".hero__field");
 const heroPalette = [[255, 195, 116], [255, 118, 148], [179, 126, 255], [107, 163, 255], [103, 221, 255]];
 const heroHoverPalette = [[249, 185, 133], [225, 139, 166], [174, 144, 225], [125, 177, 228], [165, 219, 238]];
 
+function heroInfluenceRadius(width,height) {
+  return Math.max(48,Math.min(92,Math.min(width,height)*.095));
+}
+
 // A small, fixed velocity grid carries the wake; the dense stroke grid stays static.
 // Advection transports momentum, diffusion joins adjacent currents, drag settles them.
 function createLiquidFlow() {
@@ -48,7 +52,7 @@ function createLiquidFlow() {
     stir(fromX,fromY,toX,toY,vx,vy) {
       const speed=Math.hypot(vx,vy);
       if(speed<8) return;
-      const radius=clamp(Math.min(width,height)*.095,48,92);
+      const radius=heroInfluenceRadius(width,height);
       const steps=Math.min(10,Math.max(1,Math.ceil(Math.hypot(toX-fromX,toY-fromY)/(radius*.45))));
       const strength=Math.min(1,speed/450);
       for(let step=1;step<=steps;step++) {
@@ -103,7 +107,9 @@ function createGPUField(canvas) {
       layout(location=3) in vec2 face;
       layout(location=4) in vec3 photoColor;
       uniform vec2 resolution, gridExtent;
+      uniform vec2 portraitPointer;
       uniform float hover, phase, portraitReveal;
+      uniform float portraitRadius;
       uniform sampler2D ink, flowTexture;
       out vec2 local;
       out vec4 color;
@@ -151,7 +157,9 @@ function createGPUField(canvas) {
         vec4 inkColor=mix(resting,advected,smoothstep(.1,3.,length(displacement)));
         float tint=(.07*hover+activity*.28)*(1.-face.x*.62)*backgroundMotion;
         vec3 graded=mix(inkColor.rgb,spectrum(hue)*tone,tint);
-        color=vec4(mix(graded,photoColor,portraitReveal*face.x),inkColor.a+activity*.14*(1.-face.x)*backgroundMotion);
+        float distanceRatio=length(origin.xy-portraitPointer)/portraitRadius;
+        float proximity=1.-smoothstep(.25,1.35,distanceRatio);
+        color=vec4(mix(graded,photoColor,portraitReveal*face.x*proximity),inkColor.a+activity*.14*(1.-face.x)*backgroundMotion);
       }`;
     const fragmentSource = `#version 300 es
       precision highp float;
@@ -185,7 +193,7 @@ function createGPUField(canvas) {
     for (const [location,size,offset] of [[1,3,0],[2,4,12],[3,2,28],[4,3,36]]) {
       gl.enableVertexAttribArray(location); gl.vertexAttribPointer(location,size,gl.FLOAT,false,48,offset); gl.vertexAttribDivisor(location,1);
     }
-    const uniforms=Object.fromEntries(["resolution","gridExtent","hover","phase","ink","flowTexture","portraitReveal"].map(name=>[name,gl.getUniformLocation(program,name)]));
+    const uniforms=Object.fromEntries(["resolution","gridExtent","hover","phase","ink","flowTexture","portraitReveal","portraitPointer","portraitRadius"].map(name=>[name,gl.getUniformLocation(program,name)]));
     const inkTexture=gl.createTexture(), flowTexture=gl.createTexture();
     for(const texture of [inkTexture,flowTexture]) {
       gl.bindTexture(gl.TEXTURE_2D,texture);
@@ -213,13 +221,15 @@ function createGPUField(canvas) {
         gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,columns,rows,0,gl.RGBA,gl.UNSIGNED_BYTE,tones);
         gl.viewport(0,0,canvas.width,canvas.height);
       },
-      draw(hover, phase, liquid, reveal) {
+      draw(hover, phase, liquid, reveal, portraitPoint, radius) {
         if(gl.isContextLost()) return;
         gl.useProgram(program);
         gl.uniform2f(uniforms.resolution,width,height);
         gl.uniform2f(uniforms.gridExtent,extentX,extentY);
         gl.uniform1f(uniforms.hover,hover); gl.uniform1f(uniforms.phase,phase);
         gl.uniform1f(uniforms.portraitReveal,reveal);
+        gl.uniform2f(uniforms.portraitPointer,portraitPoint.x,portraitPoint.y);
+        gl.uniform1f(uniforms.portraitRadius,radius);
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,inkTexture); gl.uniform1i(uniforms.ink,0);
         gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,flowTexture); gl.uniform1i(uniforms.flowTexture,1);
         gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,48,32,gl.RGBA,gl.FLOAT,liquid.data);
@@ -271,7 +281,8 @@ if (gpuField || fieldContext) {
   let portraitReveal = 0;
   let revealFrom = 0;
   let revealStarted = 0;
-  const portraitStrokes = [];
+  const portraitPoint={x:0,y:0};
+  let portraitRadius=60;
   heroField.dataset.entrance = reduceMotion.matches ? "complete" : "pending";
 
   function drawStroke(context, stroke) {
@@ -310,7 +321,10 @@ if (gpuField || fieldContext) {
         blue += ((first[2] + (second[2] - first[2]) * mix) * tone - blueBase) * energy;
         alpha += (.52 - alphaBase) * energy * (1 - stroke.mask);
       }
-      const reveal=portraitReveal*stroke.mask;
+      const distance=Math.hypot(stroke.x-portraitPoint.x,stroke.y-portraitPoint.y);
+      const distanceRatio=distance/portraitRadius;
+      const feather=Math.max(0,Math.min(1,(distanceRatio-.25)/1.1));
+      const reveal=portraitReveal*stroke.mask*(1-feather*feather*(3-2*feather));
       red+=(stroke.photoRed-red)*reveal;
       green+=(stroke.photoGreen-green)*reveal;
       blue+=(stroke.photoBlue-blue)*reveal;
@@ -340,7 +354,7 @@ if (gpuField || fieldContext) {
 
   function drawField() {
     if (gpuField) {
-      gpuField.draw(hoverMix,fieldPhase,liquid,portraitReveal);
+      gpuField.draw(hoverMix,fieldPhase,liquid,portraitReveal,portraitPoint,portraitRadius);
       return;
     }
     // The dense face is cached. Only the local moving patch is repainted.
@@ -419,7 +433,7 @@ if (gpuField || fieldContext) {
       fieldLastPaint=time;
       // Bounded fallback: only cells close to the current input are repainted.
       if(pointer.active) visitRegion(pointer.x-150,pointer.y-150,pointer.x+150,pointer.y+150,index=>activeStrokes.add(index));
-      if(portraitReveal>0||revealMoving) for(const index of portraitStrokes) activeStrokes.add(index);
+      if(portraitReveal>0||revealMoving) addPortraitPatch();
       for(const index of activeStrokes) {
         const stroke=strokes[index];
         const vx=liquid.at(stroke.x,stroke.y,0),vy=liquid.at(stroke.x,stroke.y,1),heat=liquid.at(stroke.x,stroke.y,2);
@@ -431,7 +445,8 @@ if (gpuField || fieldContext) {
         const limit=1+speed*.055/22;
         stroke.dx=vx*.055/limit*grip; stroke.dy=vy*.055/limit*grip;
         stroke.energy=Math.min(1,heat*1.4+speed/400)*.28;
-        if(!(stroke.mask>.001&&(portraitReveal>0||revealMoving))&&(Math.hypot(stroke.x-pointer.x,stroke.y-pointer.y)>185||(!pointer.active&&speed<.1&&heat<.001))) {
+        const inReveal=stroke.mask>.001&&(portraitReveal>0||revealMoving)&&Math.hypot(stroke.x-portraitPoint.x,stroke.y-portraitPoint.y)<portraitRadius*1.35+gridStep;
+        if(!inReveal&&(Math.hypot(stroke.x-pointer.x,stroke.y-pointer.y)>185||(!pointer.active&&speed<.1&&heat<.001))) {
           stroke.rotation=stroke.dx=stroke.dy=stroke.energy=0; activeStrokes.delete(index);
         }
       }
@@ -478,10 +493,11 @@ if (gpuField || fieldContext) {
     }
     const faceHeight = faceBounds ? Math.min(faceBounds.height, faceBounds.width * 1.23) : 0;
     const faceWidth = faceHeight * 182 / 238;
+    // Give the visible color response a wider core than the liquid force kernel.
+    portraitRadius=heroInfluenceRadius(fieldWidth,fieldHeight)*1.6;
     const faceLeft = faceBounds ? faceBounds.left - bounds.left + (faceBounds.width - faceWidth) / 2 : 0;
     const faceTop = faceBounds ? faceBounds.top - bounds.top + (faceBounds.height - faceHeight) / 2 : 0;
     strokes = [];
-    portraitStrokes.length=0;
     const step = Math.max(7.5, Math.sqrt(fieldWidth * fieldHeight / 24000));
     gridStep = step;
     gridColumns = Math.ceil(fieldWidth / step - .5);
@@ -534,7 +550,6 @@ if (gpuField || fieldContext) {
           // Sticks follow real brow, nose, lip and jaw contours at stronger edges.
           angle += Math.atan2(Math.sin(2 * (contour - angle)), Math.cos(2 * (contour - angle))) * .5 * edge;
         }
-        if(mask>.001) portraitStrokes.push(strokes.length);
         strokes.push({ x, y, angle, red, green, blue, alpha, mask, brightness, photoRed, photoGreen, photoBlue, energy: 0, color: `rgba(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)}, ${alpha.toFixed(3)})`, dx: 0, dy: 0, rotation: 0, speedX: 0, speedY: 0, speedRotation: 0 });
       }
     }
@@ -556,7 +571,7 @@ if (gpuField || fieldContext) {
       portraitReveal=currentReveal;
       fieldContext.drawImage(restingField, 0, 0, fieldWidth, fieldHeight);
       if(portraitReveal>0) {
-        for(const index of portraitStrokes) activeStrokes.add(index);
+        addPortraitPatch();
         drawField();
       }
     }
@@ -591,10 +606,12 @@ if (gpuField || fieldContext) {
     heroField.dataset.portraitHover=String(next);
     if(reduceMotion.matches) {
       portraitReveal=next?1:0;
-      if(!gpuField) for(const index of portraitStrokes) activeStrokes.add(index);
-      drawField();
-      activeStrokes.clear();
     } else requestFieldFrame();
+  }
+
+  function addPortraitPatch() {
+    const extent=portraitRadius*1.35;
+    visitRegion(portraitPoint.x-extent,portraitPoint.y-extent,portraitPoint.x+extent,portraitPoint.y+extent,index=>activeStrokes.add(index));
   }
 
   const portraitSource = new Image();
@@ -636,8 +653,15 @@ if (gpuField || fieldContext) {
     const y = event.clientY + window.scrollY - heroPageTop;
     const column=Math.round(x/gridStep-.5),row=Math.round(y/gridStep-.5);
     const hit=column>=0&&column<gridColumns&&row>=0&&row<gridRows ? strokes[row*gridColumns+column] : null;
-    setPortraitHover(!!hit&&hit.mask>(portraitHover ? .06 : .16));
-    if(reduceMotion.matches) return;
+    const onPortrait=!!hit&&hit.mask>(portraitHover ? .06 : .16);
+    if(onPortrait) {portraitPoint.x=x;portraitPoint.y=y;}
+    setPortraitHover(onPortrait);
+    if(reduceMotion.matches) {
+      if(!gpuField&&portraitReveal>0) addPortraitPatch();
+      drawField();
+      activeStrokes.clear();
+      return;
+    }
     const time = performance.now();
     const entering = !pointer.active;
     const elapsed = Math.max(8, Math.min(80, time - pointer.lastTime));
