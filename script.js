@@ -24,6 +24,15 @@ const hero = document.querySelector(".hero");
 let heroField = hero.querySelector(".hero__field");
 const heroPalette = [[255, 195, 116], [255, 118, 148], [179, 126, 255], [107, 163, 255], [103, 221, 255]];
 const heroHoverPalette = [[249, 185, 133], [225, 139, 166], [174, 144, 225], [125, 177, 228], [165, 219, 238]];
+const HERO_MOTION = Object.freeze({
+  revealDuration: 480,
+  revealScale: 1.6,
+  revealInner: .25,
+  revealOuter: 1.35,
+  pixelRatioCap: 1.5,
+  maxStrokes: 24000,
+  idleFrameInterval: 32
+});
 
 function heroInfluenceRadius(width,height) {
   return Math.max(48,Math.min(92,Math.min(width,height)*.095));
@@ -158,7 +167,7 @@ function createGPUField(canvas) {
         float tint=(.07*hover+activity*.28)*(1.-face.x*.62)*backgroundMotion;
         vec3 graded=mix(inkColor.rgb,spectrum(hue)*tone,tint);
         float distanceRatio=length(origin.xy-portraitPointer)/portraitRadius;
-        float proximity=1.-smoothstep(.25,1.35,distanceRatio);
+        float proximity=1.-smoothstep(${HERO_MOTION.revealInner.toFixed(2)},${HERO_MOTION.revealOuter.toFixed(2)},distanceRatio);
         color=vec4(mix(graded,photoColor,portraitReveal*face.x*proximity),inkColor.a+activity*.14*(1.-face.x)*backgroundMotion);
       }`;
     const fragmentSource = `#version 300 es
@@ -323,7 +332,7 @@ if (gpuField || fieldContext) {
       }
       const distance=Math.hypot(stroke.x-portraitPoint.x,stroke.y-portraitPoint.y);
       const distanceRatio=distance/portraitRadius;
-      const feather=Math.max(0,Math.min(1,(distanceRatio-.25)/1.1));
+      const feather=Math.max(0,Math.min(1,(distanceRatio-HERO_MOTION.revealInner)/(HERO_MOTION.revealOuter-HERO_MOTION.revealInner)));
       const reveal=portraitReveal*stroke.mask*(1-feather*feather*(3-2*feather));
       red+=(stroke.photoRed-red)*reveal;
       green+=(stroke.photoGreen-green)*reveal;
@@ -412,10 +421,15 @@ if (gpuField || fieldContext) {
   function animateField(time) {
     fieldFrame=0;
     if(document.hidden||!heroVisible||reduceMotion.matches||fieldLost||!finePointer.matches) {stopField();return;}
+    // Keep active input responsive; an idle pointer needs fewer identical redraws.
+    if(gpuField&&pointer.active&&time-pointer.lastTime>160&&fieldLastTime&&time-fieldLastTime<HERO_MOTION.idleFrameInterval) {
+      fieldFrame=window.requestAnimationFrame(animateField);
+      return;
+    }
     const dt=Math.min((time-(fieldLastTime||time-16.67))/1000,.035);
     fieldLastTime=time;
     const revealTarget=portraitHover?1:0;
-    const revealProgress=Math.min(1,Math.max(0,(time-revealStarted)/480));
+    const revealProgress=Math.min(1,Math.max(0,(time-revealStarted)/HERO_MOTION.revealDuration));
     const eased=revealProgress*revealProgress*(3-2*revealProgress);
     portraitReveal=revealFrom+(revealTarget-revealFrom)*eased;
     const revealMoving=revealProgress<1&&Math.abs(revealTarget-revealFrom)>.0001;
@@ -445,7 +459,7 @@ if (gpuField || fieldContext) {
         const limit=1+speed*.055/22;
         stroke.dx=vx*.055/limit*grip; stroke.dy=vy*.055/limit*grip;
         stroke.energy=Math.min(1,heat*1.4+speed/400)*.28;
-        const inReveal=stroke.mask>.001&&(portraitReveal>0||revealMoving)&&Math.hypot(stroke.x-portraitPoint.x,stroke.y-portraitPoint.y)<portraitRadius*1.35+gridStep;
+        const inReveal=stroke.mask>.001&&(portraitReveal>0||revealMoving)&&Math.hypot(stroke.x-portraitPoint.x,stroke.y-portraitPoint.y)<portraitRadius*HERO_MOTION.revealOuter+gridStep;
         if(!inReveal&&(Math.hypot(stroke.x-pointer.x,stroke.y-pointer.y)>185||(!pointer.active&&speed<.1&&heat<.001))) {
           stroke.rotation=stroke.dx=stroke.dy=stroke.energy=0; activeStrokes.delete(index);
         }
@@ -474,7 +488,7 @@ if (gpuField || fieldContext) {
     if (!fieldWidth || !fieldHeight) return;
     heroPageTop = bounds.top + window.scrollY;
     heroPageLeft = bounds.left + window.scrollX;
-    pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+    pixelRatio = Math.min(window.devicePixelRatio || 1, HERO_MOTION.pixelRatioCap);
     const faceBounds = faceArea?.getBoundingClientRect();
     const signature = [fieldWidth, fieldHeight, pixelRatio, faceBounds?.left - bounds.left, faceBounds?.top - bounds.top, faceBounds?.width, faceBounds?.height, !!portraitPixels].join("/");
     if (signature === fieldSignature) return;
@@ -494,11 +508,11 @@ if (gpuField || fieldContext) {
     const faceHeight = faceBounds ? Math.min(faceBounds.height, faceBounds.width * 1.23) : 0;
     const faceWidth = faceHeight * 182 / 238;
     // Give the visible color response a wider core than the liquid force kernel.
-    portraitRadius=heroInfluenceRadius(fieldWidth,fieldHeight)*1.6;
+    portraitRadius=heroInfluenceRadius(fieldWidth,fieldHeight)*HERO_MOTION.revealScale;
     const faceLeft = faceBounds ? faceBounds.left - bounds.left + (faceBounds.width - faceWidth) / 2 : 0;
     const faceTop = faceBounds ? faceBounds.top - bounds.top + (faceBounds.height - faceHeight) / 2 : 0;
     strokes = [];
-    const step = Math.max(7.5, Math.sqrt(fieldWidth * fieldHeight / 24000));
+    const step = Math.max(7.5, Math.sqrt(fieldWidth * fieldHeight / HERO_MOTION.maxStrokes));
     gridStep = step;
     gridColumns = Math.ceil(fieldWidth / step - .5);
     gridRows = Math.ceil(fieldHeight / step - .5);
@@ -610,7 +624,7 @@ if (gpuField || fieldContext) {
   }
 
   function addPortraitPatch() {
-    const extent=portraitRadius*1.35;
+    const extent=portraitRadius*HERO_MOTION.revealOuter;
     visitRegion(portraitPoint.x-extent,portraitPoint.y-extent,portraitPoint.x+extent,portraitPoint.y+extent,index=>activeStrokes.add(index));
   }
 
@@ -744,7 +758,12 @@ if ("IntersectionObserver" in window) {
   const sectionObserver = new IntersectionObserver(entries => {
     for (const entry of entries) {
       if (!entry.isIntersecting) continue;
-      navLinks.forEach(link => link.classList.toggle("is-active", link.dataset.nav === entry.target.id));
+      navLinks.forEach(link => {
+        const current=link.dataset.nav===entry.target.id;
+        link.classList.toggle("is-active",current);
+        if(current) link.setAttribute("aria-current","location");
+        else link.removeAttribute("aria-current");
+      });
     }
   }, { rootMargin: "-28% 0px -62% 0px" });
   ["work", "approach", "about", "contact"].forEach(id => sectionObserver.observe(document.getElementById(id)));
@@ -757,8 +776,20 @@ function setMenu(open) {
   menuToggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
   mobileMenu.hidden = !open;
 }
-menuToggle.addEventListener("click", () => setMenu(menuToggle.getAttribute("aria-expanded") !== "true"));
-mobileMenu.querySelectorAll("a").forEach(link => link.addEventListener("click", () => setMenu(false)));
+menuToggle.addEventListener("click", () => {
+  const open=menuToggle.getAttribute("aria-expanded")!=="true";
+  setMenu(open);
+  if(open) mobileMenu.querySelector("a").focus();
+});
+mobileMenu.querySelectorAll("a").forEach(link => link.addEventListener("click", () => {
+  setMenu(false);
+  if(link.hash) document.querySelector(link.hash)?.focus({preventScroll:true});
+}));
+header.addEventListener("focusout", () => {
+  window.requestAnimationFrame(() => {
+    if(!mobileMenu.hidden&&!header.contains(document.activeElement)) setMenu(false);
+  });
+});
 document.addEventListener("click", event => {
   if (!mobileMenu.hidden && !header.contains(event.target)) setMenu(false);
 });
@@ -770,4 +801,31 @@ document.addEventListener("keydown", event => {
 });
 window.addEventListener("resize", () => {
   if (window.innerWidth > 760 && !mobileMenu.hidden) setMenu(false);
+});
+
+const interfaceViewer=document.getElementById("interface-viewer");
+const interfaceImage=document.getElementById("interface-image");
+let interfaceTrigger=null;
+document.querySelectorAll("a[data-interface]").forEach(link=>{
+  link.addEventListener("click",event=>{
+    if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||typeof interfaceViewer.showModal!=="function") return;
+    event.preventDefault();
+    interfaceTrigger=link;
+    document.getElementById("interface-title").textContent=link.dataset.interface;
+    interfaceImage.alt=link.dataset.interface;
+    interfaceImage.src=link.href;
+    interfaceViewer.showModal();
+    document.body.classList.add("viewer-open");
+  });
+});
+interfaceViewer.querySelector("button").addEventListener("click",()=>interfaceViewer.close());
+interfaceViewer.addEventListener("close",()=>{
+  document.body.classList.remove("viewer-open");
+  interfaceTrigger?.focus({preventScroll:true});
+});
+interfaceViewer.addEventListener("click",event=>{
+  if(event.target===interfaceViewer) {
+    const bounds=interfaceViewer.getBoundingClientRect();
+    if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom) interfaceViewer.close();
+  }
 });

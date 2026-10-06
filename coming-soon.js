@@ -16,16 +16,16 @@ const previews = {
   },
   slm: {
     index: "05 / FIELD NOTE",
-    phase: "MODEL WORK IN PROGRESS",
+    phase: "TRAINING PIPELINE / IN DEVELOPMENT",
     name: "SMALL LANGUAGE MODEL",
     title: "Learning from",
     accent: "first principles.",
-    lead: "A roughly 100-million-parameter decoder-only language model project built to understand the full path from architecture to training. The pipeline and smoke tests are taking shape; substantive pretraining and evaluation are ahead.",
-    state: "Architecture and training workflow are in place. A trained, evaluated model is not yet available.",
+    lead: "An educational decoder-only language model with 97.5 million parameters, built from random initialization. Architecture, a byte-level BPE tokenizer, and checkpointed training workflows are implemented; a useful trained model is the next challenge.",
+    state: "Training smoke workflows have been exercised. A substantively pretrained, evaluated model is not yet presented as available.",
     code: "SLM / 05",
     steps: [
-      ["ARCHITECTURE", "A decoder-only transformer designed as a small, inspectable learning system."],
-      ["PIPELINE", "Training code and smoke tests establish the route from data to model."],
+      ["ARCHITECTURE", "Twelve decoder blocks with RoPE, RMSNorm, and SwiGLU; 97,536,768 trainable parameters in the default configuration."],
+      ["PIPELINE", "A byte-level BPE tokenizer, streamed data, mixed precision, checkpoint/resume, and instruction-tuning workflows establish the route to training."],
       ["NEXT MILESTONE", "Meaningful pretraining and evaluation will determine what the model can really do."]
     ]
   },
@@ -46,11 +46,14 @@ const previews = {
   }
 };
 
-const requestedProject = new URLSearchParams(window.location.search).get("project");
+const requestedProject = document.body.dataset.project || new URLSearchParams(window.location.search).get("project");
 const projectKey = Object.hasOwn(previews, requestedProject) ? requestedProject : "rag";
 const project = previews[projectKey];
 document.body.dataset.project = projectKey;
 document.title = `${project.name.replaceAll("-", " ")} — In the Making | Prabhas Bangarugari`;
+document.querySelector('meta[name="description"]').content=project.lead;
+document.querySelector('meta[property="og:title"]').content=document.title;
+document.querySelector('meta[property="og:description"]').content=project.lead;
 
 document.getElementById("project-index").textContent = project.index;
 document.getElementById("project-phase").textContent = project.phase;
@@ -61,6 +64,7 @@ document.getElementById("project-state").textContent = project.state;
 document.getElementById("visual-code").textContent = project.code;
 
 const stepHost = document.getElementById("project-steps");
+stepHost.replaceChildren();
 const stepIndex = document.getElementById("active-step-index");
 const stepTitle = document.getElementById("active-step-title");
 const stepDetail = document.getElementById("active-step-detail");
@@ -73,15 +77,20 @@ function selectStep(index) {
   stepHost.querySelectorAll("button").forEach((button, buttonIndex) => {
     button.setAttribute("aria-pressed", String(buttonIndex === index));
   });
+  document.querySelector(".preview-console").dataset.stage=String(index+1);
 }
 
 project.steps.forEach(([title], index) => {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "preview-console__phase";
+  button.setAttribute("aria-controls","stage-readout");
   button.innerHTML = `<span>${String(index + 1).padStart(2, "0")}</span><strong></strong><span aria-hidden="true">↗</span>`;
   button.querySelector("strong").textContent = title;
   button.addEventListener("click", () => selectStep(index));
   stepHost.append(button);
 });
 selectStep(0);
+document.querySelectorAll(".preview-project-nav a").forEach(link=>{
+  if(link.getAttribute("href")===`preview-${projectKey}.html`) link.setAttribute("aria-current","page");
+});
