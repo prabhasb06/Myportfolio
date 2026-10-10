@@ -22,8 +22,8 @@ updateScrollEffects();
 
 const hero = document.querySelector(".hero");
 let heroField = hero.querySelector(".hero__field");
-const heroPalette = [[255, 195, 116], [255, 118, 148], [179, 126, 255], [107, 163, 255], [103, 221, 255]];
-const heroHoverPalette = [[249, 185, 133], [225, 139, 166], [174, 144, 225], [125, 177, 228], [165, 219, 238]];
+const heroPalette = [[191, 133, 94], [222, 175, 133], [243, 215, 179], [167, 186, 199], [109, 143, 163]];
+const heroHoverPalette = [[207, 151, 107], [233, 191, 146], [255, 229, 190], [183, 201, 214], [134, 166, 184]];
 const HERO_MOTION = Object.freeze({
   revealDuration: 480,
   revealScale: 1.6,
@@ -123,11 +123,11 @@ function createGPUField(canvas) {
       out vec2 local;
       out vec4 color;
       vec3 spectrum(float hue) {
-        vec3 amber=vec3(249.,185.,133.)/255.;
-        vec3 rose=vec3(225.,139.,166.)/255.;
-        vec3 violet=vec3(174.,144.,225.)/255.;
-        vec3 blue=vec3(125.,177.,228.)/255.;
-        vec3 ice=vec3(165.,219.,238.)/255.;
+        vec3 amber=vec3(207.,151.,107.)/255.;
+        vec3 rose=vec3(233.,191.,146.)/255.;
+        vec3 violet=vec3(255.,229.,190.)/255.;
+        vec3 blue=vec3(183.,201.,214.)/255.;
+        vec3 ice=vec3(134.,166.,184.)/255.;
         if(hue<.25) return mix(amber,rose,hue*4.);
         if(hue<.5) return mix(rose,violet,(hue-.25)*4.);
         if(hue<.75) return mix(violet,blue,(hue-.5)*4.);
@@ -259,6 +259,7 @@ let fieldContext = gpuField ? null : heroField.getContext("2d", { alpha: true })
 if (gpuField || fieldContext) {
   const liquid=createLiquidFlow();
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+  let touchPointerId = null;
   const faceArea = hero.querySelector(".hero__portrait");
   const pointer = { x: 0, y: 0, vx: 0, vy: 0, lastTime: 0, active: false };
   let fieldWidth = 0;
@@ -287,6 +288,7 @@ if (gpuField || fieldContext) {
   let arrivalPlayed = false;
   let fieldLost = false;
   let portraitHover = false;
+  let fieldReleasedAt = 0;
   let portraitReveal = 0;
   let revealFrom = 0;
   let revealStarted = 0;
@@ -315,7 +317,7 @@ if (gpuField || fieldContext) {
       }
       let red=redBase,green=greenBase,blue=blueBase,alpha=alphaBase;
       if (stroke.energy > .002) {
-        // One shared jewel palette grades the portrait and its cursor light.
+        // Shared metallic grading; the portrait keeps natural photo colors.
         const current=stroke.x*.0018+stroke.y*.0022+fieldPhase*.32;
         const eddy=Math.sin(stroke.y*.0035-fieldPhase*.23)+Math.cos(stroke.x*.0028+fieldPhase*.19);
         const hue=.5+.5*Math.sin(current+eddy*.55-stroke.dx*.025-stroke.dy*.02);
@@ -420,7 +422,7 @@ if (gpuField || fieldContext) {
 
   function animateField(time) {
     fieldFrame=0;
-    if(document.hidden||!heroVisible||reduceMotion.matches||fieldLost||!finePointer.matches) {stopField();return;}
+    if(document.hidden||!heroVisible||reduceMotion.matches||fieldLost) {stopField();return;}
     // Keep active input responsive; an idle pointer needs fewer identical redraws.
     if(gpuField&&pointer.active&&time-pointer.lastTime>160&&fieldLastTime&&time-fieldLastTime<HERO_MOTION.idleFrameInterval) {
       fieldFrame=window.requestAnimationFrame(animateField);
@@ -433,6 +435,8 @@ if (gpuField || fieldContext) {
     const eased=revealProgress*revealProgress*(3-2*revealProgress);
     portraitReveal=revealFrom+(revealTarget-revealFrom)*eased;
     const revealMoving=revealProgress<1&&Math.abs(revealTarget-revealFrom)>.0001;
+    // Bound the trailing work in real time, even in a throttled browser pane.
+    if (!pointer.active && fieldReleasedAt && time - fieldReleasedAt > 2400) liquid.clear();
     const wakeEnergy=liquid.advance(dt);
     const target=pointer.active?1:0;
     hoverMix+=(target-hoverMix)*(1-Math.exp(-dt*7));
@@ -471,15 +475,18 @@ if (gpuField || fieldContext) {
   }
 
   function requestFieldFrame() {
-    if(!fieldFrame&&!document.hidden&&heroVisible&&!reduceMotion.matches&&!fieldLost&&finePointer.matches) fieldFrame=window.requestAnimationFrame(animateField);
+    if(!fieldFrame&&!document.hidden&&heroVisible&&!reduceMotion.matches&&!fieldLost) fieldFrame=window.requestAnimationFrame(animateField);
   }
 
   function beginEntrance() {
+    if (["booting", "waiting", "leaving"].includes(document.documentElement.dataset.entry)) return;
+    if (!portraitSource.complete) return;
     if (arrivalPlayed) return;
     arrivalPlayed=true;
     // Fade the finished field on the compositor; no per-frame canvas redraw.
     heroField.dataset.entrance=reduceMotion.matches ? "complete" : "playing";
   }
+  window.addEventListener("portfolio:enter", beginEntrance);
 
   function sizeField() {
     const bounds = hero.getBoundingClientRect();
@@ -662,7 +669,7 @@ if (gpuField || fieldContext) {
   });
 
   function moveFieldPointer(event) {
-    if (!finePointer.matches || event.pointerType === "touch" || !heroVisible) return;
+    if (!heroVisible || (event.pointerType === "touch" && event.pointerId !== touchPointerId)) return;
     const x = event.clientX + window.scrollX - heroPageLeft;
     const y = event.clientY + window.scrollY - heroPageTop;
     const column=Math.round(x/gridStep-.5),row=Math.round(y/gridStep-.5);
@@ -690,19 +697,31 @@ if (gpuField || fieldContext) {
     pointer.y = y;
     pointer.lastTime = time;
     pointer.active = true;
+    fieldReleasedAt = 0;
     if (entering) heroField.dataset.active="true";
     requestFieldFrame();
   }
   hero.addEventListener("pointerenter", moveFieldPointer, { passive: true });
   hero.addEventListener("pointermove", moveFieldPointer, { passive: true });
+  hero.addEventListener("pointerdown", event => {
+    if (event.pointerType !== "touch" || !event.isPrimary || event.target.closest("a,button,summary,input")) return;
+    touchPointerId = event.pointerId;
+    heroField.dataset.input = "touch";
+    moveFieldPointer(event);
+  }, { passive: true });
   function releaseField() {
+    fieldReleasedAt = performance.now();
+    touchPointerId = null;
     setPortraitHover(false);
     pointer.active = false;
     heroField.dataset.active="false";
     pointer.vx = pointer.vy = 0;
-    if (reduceMotion.matches || !finePointer.matches) stopField();
+    if (reduceMotion.matches) stopField();
     else requestFieldFrame();
   }
+  hero.addEventListener("pointerup", event => {
+    if (event.pointerId === touchPointerId) releaseField();
+  });
   hero.addEventListener("pointerleave", releaseField);
   hero.addEventListener("pointercancel", releaseField);
   window.addEventListener("blur", releaseField);

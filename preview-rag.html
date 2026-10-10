@@ -13,8 +13,13 @@
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/fonts.css" />
-    <link rel="stylesheet" href="coming-soon.css?v=20261007-studio" />
-    <script defer src="coming-soon.js?v=20261007-studio"></script>
+    <link rel="stylesheet" href="coming-soon.css?v=20261007-atelier" />
+    <link rel="stylesheet" href="interactions.css?v=20261007-atelier" />
+    <link rel="stylesheet" href="experience.css?v=20261007-atelier" />
+    <link rel="stylesheet" href="atelier.css?v=20261007-atelier" />
+    <script defer src="experience.js?v=20261007-atelier"></script>
+    <script defer src="coming-soon.js?v=20261007-atelier"></script>
+    <script defer src="interactions.js?v=20261007-atelier"></script>
   </head>
   <body data-project="rag">
     <a class="skip-link" href="#main">Skip to content</a>
@@ -44,18 +49,19 @@
           </section>
 
           <section class="preview-console" aria-label="Project progress explorer">
-            <div class="preview-console__top"><span>BUILD LOG / 001</span><span class="preview-console__light" aria-hidden="true"></span></div>
-            <div class="preview-console__visual" aria-hidden="true">
-              <div class="preview-console__orbit preview-console__orbit--outer"></div>
-              <div class="preview-console__orbit preview-console__orbit--inner"></div>
-              <div class="preview-console__cross preview-console__cross--horizontal"></div>
-              <div class="preview-console__cross preview-console__cross--vertical"></div>
-              <span class="preview-console__satellite"></span>
-              <div class="preview-console__core"><span>IN THE<br />MAKING</span><small id="visual-code">RAG / 02</small></div>
+            <div class="preview-console__top"><span>CONCEPT DIAGRAM / EXPLORE THE STAGES</span><span class="preview-console__light" aria-hidden="true"></span></div>
+            <div class="preview-console__visual">
+              <div class="preview-console__orbit preview-console__orbit--outer" aria-hidden="true"></div>
+              <div class="preview-console__orbit preview-console__orbit--inner" aria-hidden="true"></div>
+              <div class="preview-console__cross preview-console__cross--horizontal" aria-hidden="true"></div>
+              <div class="preview-console__cross preview-console__cross--vertical" aria-hidden="true"></div>
+              <span class="preview-console__satellite" aria-hidden="true"></span>
+              <div class="preview-console__core" aria-hidden="true"><span>IN THE<br />MAKING</span><small id="visual-code">RAG / 02</small></div>
+              <button class="preview-console__explore" type="button" aria-controls="stage-readout">NEXT STAGE <span aria-hidden="true">↗</span></button>
             </div>
             <div class="preview-console__readout" id="stage-readout" role="status" aria-live="polite" aria-atomic="true"><span id="active-step-index">01 / 03</span><strong id="active-step-title">SOURCE MATERIAL</strong><p id="active-step-detail">Local agriculture handbooks provide the material the assistant can actually cite.</p></div>
             <div class="preview-console__phases" id="project-steps" aria-label="Explore project stages"><details class="preview-static-stage"><summary>01 / SOURCE MATERIAL</summary><p>Local agriculture handbooks provide the material the assistant can actually cite.</p></details><details class="preview-static-stage"><summary>02 / RETRIEVAL</summary><p>BM25-style ranking finds relevant passages without relying on a remote service.</p></details><details class="preview-static-stage"><summary>03 / EVIDENCE</summary><p>Page references let the reader trace an answer back to its source.</p></details></div>
-            <div class="preview-console__foot"><span>SELECT A STAGE TO EXPLORE</span><span>PB / 2026</span></div>
+            <div class="preview-console__foot"><span>SELECT A STAGE · SWIPE THE DIAGRAM</span><span>PB / 2026</span></div>
           </section>
         </div>
         <nav class="preview-project-nav" aria-label="Other work in progress"><a href="preview-rag.html">RETRIEVAL ASSISTANT <span aria-hidden="true">↗</span></a><a href="preview-slm.html">SMALL LANGUAGE MODEL <span aria-hidden="true">↗</span></a><a href="preview-business.html">BUSINESS OPERATOR <span aria-hidden="true">↗</span></a></nav>

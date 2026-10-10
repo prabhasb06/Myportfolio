@@ -17,10 +17,36 @@
     <title>Prabhas Bangarugari — AI Systems & Digital Products</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="assets/fonts.css" />
-    <link rel="stylesheet" href="styles.css?v=20261007-studio" />
-    <script defer src="script.js?v=20261007-studio"></script>
+    <link rel="stylesheet" href="styles.css?v=20261007-atelier" />
+    <link rel="stylesheet" href="interactions.css?v=20261007-atelier" />
+    <link rel="stylesheet" href="experience.css?v=20261007-atelier" />
+    <link rel="stylesheet" href="atelier.css?v=20261007-atelier" />
+    <script src="experience-init.js?v=20261007-atelier"></script>
+    <script defer src="experience.js?v=20261007-atelier"></script>
+    <script defer src="script.js?v=20261007-atelier"></script>
+    <script defer src="interactions.js?v=20261007-atelier"></script>
   </head>
   <body>
+    <dialog class="site-entrance" id="site-entrance" aria-labelledby="entry-name" aria-describedby="entry-identity">
+      <div class="entry-shell">
+        <div class="entry-art" aria-hidden="true">
+          <svg class="entry-field" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice"></svg>
+          <span class="entry-art__caption">PB / A SIGNATURE FORGED IN LIGHT</span>
+        </div>
+        <div class="entry-sweep" aria-hidden="true"></div>
+        <div class="entry-top"><span><b class="entry-seal" aria-hidden="true">PB</b> A PERSONAL COLLECTION</span><span class="entry-edition">AI SYSTEMS / SIMULATION / DIGITAL PRODUCTS</span></div>
+        <div class="entry-center">
+          <p class="entry-kicker"><span aria-hidden="true">01 /</span> THE PERSON BEHIND THE SYSTEMS</p>
+          <h2 class="entry-name" id="entry-name"><span>Prabhas</span><span>Bangarugari.</span></h2>
+          <p class="entry-identity" id="entry-identity">AI systems. Simulation. Digital products.</p>
+          <div class="entry-controls">
+            <button type="button" class="button entry-button" data-enter autofocus>Enter the site <span aria-hidden="true">↗</span></button>
+            <button type="button" class="entry-skip" data-skip>Skip intro</button>
+          </div>
+        </div>
+        <div class="entry-bottom"><span>SELECTED WORK <strong>/ 2026</strong></span><span class="entry-sequence" aria-hidden="true"><i></i> SIGNAL <span>→</span> SIGNATURE</span></div>
+      </div>
+    </dialog>
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="scroll-progress" aria-hidden="true"><span></span></div>
 
@@ -55,12 +81,13 @@
     <main id="main">
       <section class="hero" aria-labelledby="hero-title">
         <canvas class="hero__field" aria-hidden="true"></canvas>
+        <div class="hero__veil" aria-hidden="true"></div>
         <div class="hero__content container">
           <div class="hero__topline"><span><span class="signal-dot" aria-hidden="true"></span> PRABHAS BANGARUGARI / PORTFOLIO</span><span>PERSONAL PORTFOLIO / 2026</span></div>
           <div class="hero__stage">
             <div class="hero__copy">
               <p class="eyebrow hero__eyebrow">AI SYSTEMS <span aria-hidden="true">/</span> SIMULATION <span aria-hidden="true">/</span> DIGITAL PRODUCTS</p>
-              <h1 id="hero-title"><span>Prabhas</span><span>Bangarugari<span class="hero__period">.</span></span></h1>
+              <h1 id="hero-title" tabindex="-1"><span>Prabhas</span><span>Bangarugari<span class="hero__period">.</span></span></h1>
               <div class="hero__statement">
                 <span class="hero__statement-index">01 / AN INTRODUCTION</span>
                 <div>
@@ -72,8 +99,8 @@
                 <a class="button button--light" href="#work">Explore selected work <span aria-hidden="true">↘</span></a>
               </div>
             </div>
-            <div class="hero__portrait" aria-hidden="true"></div>
-            <p class="hero__portrait-note" aria-hidden="true"><span>PORTRAIT / IN THE FIELD</span><span>MOVE TO EXPLORE ↗</span></p>
+            <div class="hero__portrait" aria-hidden="true"><span class="hero__touch-hint">TOUCH &amp; DRAG TO EXPLORE</span></div>
+            <p class="hero__portrait-note" aria-hidden="true"><span>PORTRAIT / IN THE FIELD</span><span>REVEAL THE COLOUR ↗</span></p>
             <div class="hero__index" aria-label="Selected work index">
               <div class="hero__index-top"><span>SELECTED WORK / AN INDEX</span><span>01 — 04</span></div>
               <a href="https://steelsimmvp.onrender.com/" target="_blank" rel="noopener noreferrer" aria-label="Open the SteelSim live simulation"><span class="hero__index-number">01 /</span><span><strong>SteelSim + ACAMIS</strong><small>SIMULATION + AGENTIC INTELLIGENCE</small></span><span class="hero__index-arrow" aria-hidden="true">↗</span></a>
@@ -91,7 +118,7 @@
         <div class="section-glow section-glow--right" aria-hidden="true"></div>
         <div class="container">
           <div class="section-heading reveal">
-            <div><p class="eyebrow">SELECTED WORK / 2025—26</p><h2 id="work-title">Systems, made<br /><em>tangible.</em></h2></div>
+            <div><p class="eyebrow">01 / SELECTED WORK</p><h2 id="work-title">Systems, made<br /><em>tangible.</em></h2></div>
             <p>A plant you can run. An answer you can trace. An engine you can challenge. A storefront you can explore.</p>
           </div>
 
@@ -200,6 +227,7 @@
                 <div class="project-notes__content">
                   <div class="project-notes__grid"><div><h4>THE EXPERIENCE</h4><p>I built Fashion Company as a visual commerce experience, connecting an editorial first impression with browsable products.</p></div><div><h4>THE DESIGN PROBLEM</h4><p>Imagery, hierarchy, and category navigation need to work together across screen sizes. Product discovery should stay clear on a phone.</p></div><div><h4>EXPLORE IT</h4><p>The public interface is available to browse. Payment processing, order fulfilment, and production commerce infrastructure are not asserted by this portfolio.</p></div></div>
                   <div class="project-notes__links"><a href="assets/fashion-ui.webp" data-interface="Fashion Company — storefront interface" class="text-link">INSPECT THE REAL INTERFACE <span aria-hidden="true">↗</span></a></div>
+                  <p class="project-notes__credit">Built by Purna Sai &amp; Prabhas Bangarugari.</p>
                 </div>
               </details>
             </article>
@@ -210,24 +238,30 @@
       <section class="approach section" tabindex="-1" id="approach" aria-labelledby="approach-title">
         <div class="container">
           <div class="approach__intro reveal">
-            <p class="eyebrow">HOW I THINK ABOUT BUILDING</p>
+            <p class="eyebrow">02 / HOW I THINK ABOUT BUILDING</p>
             <h2 id="approach-title">The interesting part is<br /><em>making it work.</em></h2>
           </div>
           <div class="approach__principles">
             <article class="approach__principle reveal">
               <span class="approach__number">01 /</span>
+              <span class="principle-art" aria-hidden="true"><svg viewBox="0 0 112 88"><path class="principle-art__base" d="M16 62L56 84L96 62L56 40Z M16 44L56 66L96 44L56 22Z M16 26L56 48L96 26L56 4Z M16 26V62M96 26V62M56 48V84"/><path class="principle-art__accent" d="M16 26L56 4L96 26L56 48Z M56 48V84"/></svg></span>
               <h3>Model the reality.</h3>
               <p>SteelSim models equipment and process flow. Its interface makes those relationships legible before a run begins.</p>
+              <details class="principle-note"><summary>EXPLORE THE CONNECTION <span aria-hidden="true">+</span></summary><div class="principle-note__body"><p>A plant’s topology, material flow, and operating state belong in the same view. SteelSim connects the model to a run you can inspect.</p><a href="#project-steelsim">SEE STEELSIM + ACAMIS <span aria-hidden="true">↗</span></a></div></details>
             </article>
             <article class="approach__principle reveal">
               <span class="approach__number">02 /</span>
+              <span class="principle-art" aria-hidden="true"><svg viewBox="0 0 112 88"><path class="principle-art__base" d="M18 9H72V68H18Z M34 21H88V80H34Z M43 33H76M43 43H76M43 53H65M43 63H70"/><path class="principle-art__accent" d="M18 9H72V68H18Z M43 33H76M43 43H76M43 53H65"/></svg></span>
               <h3>Show the reasoning.</h3>
               <p>The RAG assistant cites its sources. ACAMIS is designed to trace agent assessments, escalation, and human approval back to operating evidence.</p>
+              <details class="principle-note"><summary>EXPLORE THE CONNECTION <span aria-hidden="true">+</span></summary><div class="principle-note__body"><p>A retrieval result becomes useful when its evidence is visible. The assistant keeps source pages close to the answer so the reader can check them.</p><a href="preview-rag.html">EXPLORE CITED RETRIEVAL <span aria-hidden="true">↗</span></a></div></details>
             </article>
             <article class="approach__principle reveal">
               <span class="approach__number">03 /</span>
+              <span class="principle-art" aria-hidden="true"><svg viewBox="0 0 112 88"><path class="principle-art__base" d="M8 60H104M24 16V77M8 32H104 M24 60C47 60 47 32 66 32S84 12 99 12"/><path class="principle-art__accent" d="M24 60C47 60 47 32 66 32S84 12 99 12M88 12H99V23"/></svg></span>
               <h3>Make it usable.</h3>
               <p>Fashion Company pairs editorial presentation with product discovery. The same attention to hierarchy helps technical tools feel clear.</p>
+              <details class="principle-note"><summary>EXPLORE THE CONNECTION <span aria-hidden="true">+</span></summary><div class="principle-note__body"><p>Hierarchy, clear navigation, and considered feedback shape how someone discovers the product. The interface is part of the engineering.</p><a href="#project-fashion">SEE FASHION COMPANY <span aria-hidden="true">↗</span></a></div></details>
             </article>
           </div>
         </div>
@@ -236,11 +270,11 @@
       <section class="about section" tabindex="-1" id="about" aria-labelledby="about-title">
         <div class="container">
           <div class="about__masthead reveal">
-            <p class="eyebrow">ABOUT / THE PERSON BEHIND THE WORK</p>
+            <p class="eyebrow">03 / THE PERSON BEHIND THE WORK</p>
             <span>PB / 2026</span>
           </div>
           <div class="about__story reveal">
-            <h2 id="about-title">Curiosity,<br /><em>made concrete.</em></h2>
+            <div class="about__heading"><h2 id="about-title">Curiosity,<br /><em>made concrete.</em></h2><div class="about__practice" aria-label="Areas of practice"><span><i>01</i> AGENTIC SYSTEMS</span><span><i>02</i> INDUSTRIAL SIMULATION</span><span><i>03</i> DIGITAL INTERFACES</span></div></div>
             <div class="about__body">
               <p class="about__lead">I’m drawn to the moment an abstract idea becomes something you can inspect, question, and use.</p>
               <p>I’m Prabhas Bangarugari, a computer science student focused on AI and machine learning. My work brings together autonomous agentic intelligence, industrial simulation, retrieval systems, and digital interfaces. SteelSim + ACAMIS connects a plant’s simulated state with evidence, monitoring, and reviewable decisions.</p>
@@ -258,7 +292,8 @@
 
       <section class="contact section" tabindex="-1" id="contact" aria-labelledby="contact-title">
         <div class="container contact__inner reveal">
-          <p class="eyebrow">NEXT / A CONVERSATION</p>
+          <p class="eyebrow">04 / A CONVERSATION</p>
+          <a class="contact__invitation" href="https://www.linkedin.com/in/prabhas-bangarugari-35494232a" target="_blank" rel="noopener noreferrer" aria-label="Connect with Prabhas on LinkedIn"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 38L38 10M10 10H38V38"/></svg></a>
           <h2 id="contact-title">The next idea<br /><em>starts with a hello.</em></h2>
           <p class="contact__lead">A technical question, a collaboration, or a project with a little ambition. I’d like to hear it.</p>
           <a class="button button--glass contact__action" href="https://www.linkedin.com/in/prabhas-bangarugari-35494232a" target="_blank" rel="noopener noreferrer">Start a conversation on LinkedIn <span aria-hidden="true">↗</span></a>

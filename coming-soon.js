@@ -68,8 +68,13 @@ stepHost.replaceChildren();
 const stepIndex = document.getElementById("active-step-index");
 const stepTitle = document.getElementById("active-step-title");
 const stepDetail = document.getElementById("active-step-detail");
+const previewReduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+let selectedStep = 0;
+let stepAnimation = null;
 
 function selectStep(index) {
+  const changed = selectedStep !== index;
+  selectedStep = index;
   const [title, detail] = project.steps[index];
   stepIndex.textContent = `${String(index + 1).padStart(2, "0")} / 03`;
   stepTitle.textContent = title;
@@ -78,6 +83,10 @@ function selectStep(index) {
     button.setAttribute("aria-pressed", String(buttonIndex === index));
   });
   document.querySelector(".preview-console").dataset.stage=String(index+1);
+  if (changed && !previewReduceMotion.matches) {
+    stepAnimation?.cancel();
+    stepAnimation = document.getElementById("stage-readout").animate?.([{opacity:.3,transform:"translateY(8px)"},{opacity:1,transform:"translateY(0)"}], {duration:380,easing:"cubic-bezier(.22,1,.36,1)"});
+  }
 }
 
 project.steps.forEach(([title], index) => {
@@ -91,6 +100,25 @@ project.steps.forEach(([title], index) => {
   stepHost.append(button);
 });
 selectStep(0);
+
+const stageVisual = document.querySelector(".preview-console__visual");
+const nextStageButton = document.querySelector(".preview-console__explore");
+nextStageButton.addEventListener("click", () => selectStep((selectedStep+1)%project.steps.length));
+let stageGesture = null;
+stageVisual.addEventListener("pointerdown", event => {
+  if (!event.isPrimary || event.target.closest("button")) return;
+  stageGesture = {id:event.pointerId,x:event.clientX,y:event.clientY};
+}, {passive:true});
+stageVisual.addEventListener("pointermove", event => {
+  if (!stageGesture || stageGesture.id !== event.pointerId) return;
+  const dx = event.clientX-stageGesture.x, dy = event.clientY-stageGesture.y;
+  if (Math.abs(dy)>Math.abs(dx) && Math.abs(dy)>20) {stageGesture=null;return;}
+  if (Math.abs(dx)>45 && Math.abs(dx)>Math.abs(dy)*1.4) {
+    selectStep((selectedStep+(dx<0?1:project.steps.length-1))%project.steps.length);
+    stageGesture=null;
+  }
+}, {passive:true});
+["pointerup","pointercancel","pointerleave"].forEach(type=>stageVisual.addEventListener(type,()=>{stageGesture=null;}));
 document.querySelectorAll(".preview-project-nav a").forEach(link=>{
   if(link.getAttribute("href")===`preview-${projectKey}.html`) link.setAttribute("aria-current","page");
 });
